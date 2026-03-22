@@ -1,3 +1,5 @@
+"""MoneyPoly CLI entry point."""
+
 from moneypoly.game import Game
 
 
