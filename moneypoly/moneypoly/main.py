@@ -12,6 +12,7 @@ def get_player_names():
 
 
 def main():
+    """Create and run a game from user input."""
     names = get_player_names()
     try:
         game = Game(names)
