@@ -1,8 +1,11 @@
-import math
+"""Bank-related operations for MoneyPoly."""
+
 from moneypoly.config import BANK_STARTING_FUNDS
 
 
 class Bank:
+    """Represent the shared bank used by the game."""
+
     def __init__(self):
         self._funds = BANK_STARTING_FUNDS
         self._loans_issued = []
