@@ -5,20 +5,65 @@ class Property:
 
     FULL_GROUP_MULTIPLIER = 2
 
-    def __init__(self, name, position, price, base_rent, group=None):
-        self.name = name
-        self.position = position
-        self.price = price
-        self.base_rent = base_rent
-        self.mortgage_value = price // 2
-        self.owner = None
-        self.is_mortgaged = False
-        self.houses = 0
+    def __init__(self, details, group=None):
+        self.name, self.position, price, base_rent = details
+        self.group = group
+        self._financial = {
+            "price": price,
+            "base_rent": base_rent,
+            "mortgage_value": price // 2,
+        }
+        self._state = {
+            "owner": None,
+            "is_mortgaged": False,
+            "houses": 0,
+        }
 
         # Register with the group immediately on creation
-        self.group = group
         if group is not None and self not in group.properties:
             group.properties.append(self)
+
+    @property
+    def price(self):
+        """Return the purchase price of the property."""
+        return self._financial["price"]
+
+    @property
+    def base_rent(self):
+        """Return the base rent before group bonuses."""
+        return self._financial["base_rent"]
+
+    @property
+    def mortgage_value(self):
+        """Return the amount paid out when the property is mortgaged."""
+        return self._financial["mortgage_value"]
+
+    @property
+    def owner(self):
+        """Return the current owner, if any."""
+        return self._state["owner"]
+
+    @owner.setter
+    def owner(self, value):
+        self._state["owner"] = value
+
+    @property
+    def is_mortgaged(self):
+        """Return whether the property is currently mortgaged."""
+        return self._state["is_mortgaged"]
+
+    @is_mortgaged.setter
+    def is_mortgaged(self, value):
+        self._state["is_mortgaged"] = value
+
+    @property
+    def houses(self):
+        """Return the number of houses built on the property."""
+        return self._state["houses"]
+
+    @houses.setter
+    def houses(self, value):
+        self._state["houses"] = value
 
     def get_rent(self):
         """
