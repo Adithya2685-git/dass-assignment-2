@@ -136,7 +136,7 @@ def test_repair_scheduling_fails_without_available_mechanic():
     assert scheduled is False
 
 
-def test_mission_with_car_requirement_fails_if_repair_cannot_be_scheduled():
+def test_mission_with_healthy_car_starts_without_repair_flow():
     state = create_state()
     register_member(state, "Mia", "driver")
     register_member(state, "Ken", "mechanic")
@@ -144,6 +144,19 @@ def test_mission_with_car_requirement_fails_if_repair_cannot_be_scheduled():
     create_mission(state, "Rescue Run", ["driver", "mechanic"])
 
     started = start_mission(state, "Rescue Run", ["driver", "mechanic"], "RX7")
+
+    assert started is True
+    assert state.missions["Rescue Run"]["started"] is True
+
+
+def test_mission_with_damaged_car_fails_if_repair_cannot_be_scheduled():
+    state = create_state()
+    register_member(state, "Mia", "driver")
+    add_car(state, "RX7", "Mazda RX-7")
+    mark_car_damaged(state, "RX7")
+    create_mission(state, "Rescue Run", ["driver"])
+
+    started = start_mission(state, "Rescue Run", ["driver"], "RX7")
 
     assert started is False
     assert state.missions["Rescue Run"]["started"] is False

@@ -1,4 +1,5 @@
 from .crew_management import get_available_members
+from .inventory import get_car
 from .maintenance import schedule_repair
 from .state import StreetRaceState
 
@@ -68,8 +69,12 @@ def start_mission(
     if not validate_mission_roles(state, mission["required_roles"]):
         return False
 
-    if car_id is not None and not schedule_repair(state, car_id):
-        return False
+    if car_id is not None:
+        car = get_car(state, car_id)
+        if car is None:
+            return False
+        if car["damaged"] and not schedule_repair(state, car_id):
+            return False
 
     mission["started"] = True
     return True
