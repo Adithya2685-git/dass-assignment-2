@@ -11,10 +11,48 @@ class Player:
         self.balance = balance
         self.position = 0
         self.properties = []
-        self.in_jail = False
-        self.jail_turns = 0
-        self.get_out_of_jail_cards = 0
-        self.is_eliminated = False
+        self._status = {
+            "in_jail": False,
+            "jail_turns": 0,
+            "get_out_of_jail_cards": 0,
+            "is_eliminated": False,
+        }
+
+    @property
+    def in_jail(self):
+        """Return whether the player is currently in jail."""
+        return self._status["in_jail"]
+
+    @in_jail.setter
+    def in_jail(self, value):
+        self._status["in_jail"] = value
+
+    @property
+    def jail_turns(self):
+        """Return how many consecutive turns the player has spent in jail."""
+        return self._status["jail_turns"]
+
+    @jail_turns.setter
+    def jail_turns(self, value):
+        self._status["jail_turns"] = value
+
+    @property
+    def get_out_of_jail_cards(self):
+        """Return the number of jail-free cards the player holds."""
+        return self._status["get_out_of_jail_cards"]
+
+    @get_out_of_jail_cards.setter
+    def get_out_of_jail_cards(self, value):
+        self._status["get_out_of_jail_cards"] = value
+
+    @property
+    def is_eliminated(self):
+        """Return whether the player has been eliminated from the game."""
+        return self._status["is_eliminated"]
+
+    @is_eliminated.setter
+    def is_eliminated(self, value):
+        self._status["is_eliminated"] = value
 
 
     def add_money(self, amount):
