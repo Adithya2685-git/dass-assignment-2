@@ -1,5 +1,7 @@
 """Game tests."""
 
+import pytest
+
 from moneypoly.game import Game
 from moneypoly.player import Player
 from moneypoly.property import Property
@@ -90,3 +92,33 @@ def test_trade_transfers_cash_to_seller():
     assert seller.balance == 160
     assert buyer.balance == 140
     assert prop.owner == buyer
+
+
+def test_game_requires_at_least_two_players():
+    """The game should reject a setup with fewer than two players."""
+    with pytest.raises(ValueError, match="at least two players"):
+        Game(["Solo"])
+
+
+def test_game_rejects_duplicate_player_names():
+    """Duplicate names should be rejected during setup."""
+    with pytest.raises(ValueError, match="must be unique"):
+        Game(["A", "A"])
+
+
+def test_eliminating_current_player_does_not_skip_next_player(monkeypatch):
+    """Removing the current player should leave the next player up."""
+    game = Game(["A", "B", "C"])
+
+    monkeypatch.setattr(game.dice, "roll", lambda: 4)
+    monkeypatch.setattr(game.dice, "describe", lambda: "2 + 2 = 4")
+    monkeypatch.setattr(game.dice, "is_doubles", lambda: False)
+
+    def remove_current(current_player, _steps):
+        game.players.remove(current_player)
+
+    monkeypatch.setattr(game, "_move_and_resolve", remove_current)
+
+    game.play_turn()
+
+    assert game.current_player().name == "B"

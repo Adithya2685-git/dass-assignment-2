@@ -20,10 +20,15 @@ class Game:
     """Manages the full state and flow of a MoneyPoly game session."""
 
     def __init__(self, player_names):
+        names = [name.strip() for name in player_names if name.strip()]
+        if len(names) < 2:
+            raise ValueError("MoneyPoly requires at least two players.")
+        if len(set(names)) != len(names):
+            raise ValueError("Player names must be unique.")
         self.board = Board()
         self.bank = Bank()
         self.dice = Dice()
-        self.players = [Player(name) for name in player_names]
+        self.players = [Player(name) for name in names]
         self.chance_deck = CardDeck(CHANCE_CARDS)
         self.community_deck = CardDeck(COMMUNITY_CHEST_CARDS)
         self._turn_state = {
@@ -53,7 +58,10 @@ class Game:
 
         if player.in_jail:
             self._handle_jail_turn(player)
-            self.advance_turn()
+            if player in self.players:
+                self.advance_turn()
+            elif self.players:
+                self._turn_state["turn_number"] += 1
             return
 
         roll = self.dice.roll()
@@ -67,6 +75,10 @@ class Game:
             return
 
         self._move_and_resolve(player, roll)
+        if player not in self.players:
+            if self.players:
+                self._turn_state["turn_number"] += 1
+            return
 
         # Rolling doubles earns an extra turn
         if self.dice.is_doubles():
