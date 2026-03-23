@@ -44,10 +44,12 @@ class Bank:
         The bank's own funds are reduced accordingly.
         """
         if amount <= 0:
-            return
-        player.add_money(amount)
+            return 0
+        paid = self.pay_out(amount)
+        player.add_money(paid)
         self._loans_issued.append((player.name, amount))
         print(f"  Bank issued a ${amount} emergency loan to {player.name}.")
+        return paid
 
     def total_loans_issued(self):
         """Return the cumulative value of all loans the bank has issued."""
