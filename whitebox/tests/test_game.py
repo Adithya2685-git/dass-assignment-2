@@ -58,3 +58,18 @@ def test_find_winner_returns_richest_player():
     winner = game.find_winner()
 
     assert winner == rich
+
+
+def test_unmortgage_keeps_property_mortgaged_when_player_cannot_pay():
+    """Failed unmortgage should not clear the mortgage state."""
+    game = Game(["A", "B"])
+    owner = Player("Owner", balance=10)
+    prop = Property(("Lot", 1, 100, 10))
+    prop.owner = owner
+    owner.add_property(prop)
+    prop.is_mortgaged = True
+
+    result = game.unmortgage_property(owner, prop)
+
+    assert result is False
+    assert prop.is_mortgaged is True
