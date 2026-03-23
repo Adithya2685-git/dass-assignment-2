@@ -30,3 +30,19 @@ def test_pay_rent_transfers_money_to_property_owner():
 
     assert tenant.balance == 175
     assert owner.balance == 325
+
+
+def test_paying_jail_fine_deducts_money_from_player(monkeypatch):
+    """Choosing to pay the jail fine should reduce the player's balance."""
+    game = Game(["A", "B"])
+    player = Player("Jailed", balance=150)
+    player.in_jail = True
+
+    monkeypatch.setattr("moneypoly.ui.confirm", lambda prompt: True)
+    monkeypatch.setattr(game.dice, "roll", lambda: 4)
+    monkeypatch.setattr(game.dice, "describe", lambda: "2 + 2 = 4")
+    monkeypatch.setattr(game, "_move_and_resolve", lambda current, roll: None)
+
+    game._handle_jail_turn(player)
+
+    assert player.balance == 100
