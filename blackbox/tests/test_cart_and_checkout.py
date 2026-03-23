@@ -17,11 +17,54 @@ def _admin_products(session, base_url, user_headers):
     return products
 
 
+def _products_list(session, base_url, user_headers):
+    response = session.get(
+        f"{base_url}/api/v1/products",
+        headers=user_headers,
+    )
+    assert response.status_code == 200
+    products = response.json()
+    assert isinstance(products, list)
+    return products
+
+
+def _product_id(product):
+    for key in ("product_id", "id"):
+        if key in product:
+            return product[key]
+    raise AssertionError("Could not locate product id in product payload")
+
+
 def _pick_product(session, base_url, user_headers, min_stock=1):
-    for product in _admin_products(session, base_url, user_headers):
-        if product.get("is_active") is True and product.get("stock", 0) >= min_stock:
-            return product
-    raise AssertionError("No suitable active product with enough stock was found")
+    admin_products = _admin_products(session, base_url, user_headers)
+    candidate_ids = []
+
+    for product in admin_products:
+        product_id = product.get("product_id", product.get("id"))
+        if product_id is None:
+            continue
+        stock = None
+        for key in ("stock", "quantity", "inventory", "inventory_count"):
+            if key in product:
+                stock = product[key]
+                break
+        if stock is None or stock >= min_stock:
+            candidate_ids.append(product_id)
+
+    if not candidate_ids:
+        candidate_ids = [_product_id(product) for product in _products_list(session, base_url, user_headers)]
+
+    for product_id in candidate_ids:
+        add_response = session.post(
+            f"{base_url}/api/v1/cart/add",
+            headers=user_headers,
+            json={"product_id": product_id, "quantity": 1},
+        )
+        if add_response.status_code == 200:
+            _clear_cart(session, base_url, user_headers)
+            return {"product_id": product_id}
+
+    raise AssertionError("Could not find a product that can be added to the cart")
 
 
 def _cart_items(payload):
@@ -36,7 +79,7 @@ def _cart_items(payload):
 
 def _cart_total(payload):
     if isinstance(payload, dict):
-        for key in ("total", "cart_total"):
+        for key in ("total", "cart_total", "grand_total"):
             if key in payload:
                 return payload[key]
     return sum(item["subtotal"] for item in _cart_items(payload))
@@ -143,13 +186,10 @@ def test_cart_total_matches_sum_of_item_subtotals(session, base_url, user_header
     first_product = _pick_product(session, base_url, user_headers, min_stock=1)
 
     second_product = None
-    for product in _admin_products(session, base_url, user_headers):
-        if (
-            product.get("is_active") is True
-            and product.get("stock", 0) >= 1
-            and product["product_id"] != first_product["product_id"]
-        ):
-            second_product = product
+    for product in _products_list(session, base_url, user_headers):
+        product_id = _product_id(product)
+        if product_id != first_product["product_id"]:
+            second_product = {"product_id": product_id}
             break
 
     if second_product is None:

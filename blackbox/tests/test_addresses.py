@@ -11,11 +11,11 @@ def _address_from_payload(payload):
 
 
 def _new_address_payload(label="HOME", is_default=False):
-    suffix = str(int(time.time() * 1000))[-8:]
+    suffix = str(int(time.time() * 1000))[-6:]
     return {
         "label": label,
-        "street": f"{suffix} Test Street",
-        "city": f"City{suffix[-2:]}",
+        "street": f"Maple Street {suffix}",
+        "city": "Bangalore",
         "pincode": "560001",
         "is_default": is_default,
     }

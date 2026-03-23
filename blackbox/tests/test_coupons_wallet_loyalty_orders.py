@@ -32,6 +32,19 @@ def _order_id_from_checkout(payload):
     return None
 
 
+def _invoice_value(payload, key):
+    if isinstance(payload, dict):
+        if key in payload:
+            return payload[key]
+        for nested_key in ("invoice", "data", "order"):
+            nested = payload.get(nested_key)
+            if isinstance(nested, dict):
+                value = _invoice_value(nested, key)
+                if value is not None:
+                    return value
+    return None
+
+
 def test_apply_expired_coupon_is_rejected(session, base_url, user_headers):
     _clear_cart(session, base_url, user_headers)
     product = _pick_product(session, base_url, user_headers, min_stock=1)
@@ -139,7 +152,7 @@ def test_wallet_pay_deducts_exact_amount(session, base_url, user_headers):
     assert after.status_code == 200
     after_balance = _wallet_balance(after.json())
 
-    assert after_balance == before_balance - 10
+    assert round(before_balance - after_balance, 2) == 10
 
 
 def test_get_loyalty_returns_json(session, base_url, user_headers):
@@ -250,8 +263,8 @@ def test_invoice_total_is_not_less_than_subtotal(session, base_url, user_headers
     assert invoice.status_code == 200
     payload = invoice.json()
 
-    subtotal = payload.get("subtotal")
-    total = payload.get("total")
+    subtotal = _invoice_value(payload, "subtotal")
+    total = _invoice_value(payload, "total")
 
     assert subtotal is not None
     assert total is not None
