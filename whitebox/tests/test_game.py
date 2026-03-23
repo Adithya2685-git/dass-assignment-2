@@ -73,3 +73,20 @@ def test_unmortgage_keeps_property_mortgaged_when_player_cannot_pay():
 
     assert result is False
     assert prop.is_mortgaged is True
+
+
+def test_trade_transfers_cash_to_seller():
+    """Trade payment should move cash from buyer to seller."""
+    game = Game(["Seller", "Buyer"])
+    seller = Player("Seller", balance=100)
+    buyer = Player("Buyer", balance=200)
+    prop = Property(("Trade Lot", 1, 50, 5))
+    prop.owner = seller
+    seller.add_property(prop)
+
+    result = game.trade(seller, buyer, prop, 60)
+
+    assert result is True
+    assert seller.balance == 160
+    assert buyer.balance == 140
+    assert prop.owner == buyer
