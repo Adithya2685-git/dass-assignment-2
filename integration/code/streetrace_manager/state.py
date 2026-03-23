@@ -9,6 +9,7 @@ class StreetRaceState:
     tools: dict[str, int] = field(default_factory=dict)
     cash_balance: int = 0
     races: dict[str, dict] = field(default_factory=dict)
+    race_results: list[dict] = field(default_factory=list)
     missions: dict[str, dict] = field(default_factory=dict)
     rankings: dict[str, int] = field(default_factory=dict)
     repairs: list[dict] = field(default_factory=list)
