@@ -16,3 +16,17 @@ def test_buy_property_allows_purchase_when_balance_equals_price():
     assert result is True
     assert player.balance == 0
     assert prop.owner == player
+
+
+def test_pay_rent_transfers_money_to_property_owner():
+    """Rent should go to the owner."""
+    game = Game(["Tenant", "Owner"])
+    tenant = Player("Tenant", balance=200)
+    owner = Player("Owner", balance=300)
+    prop = Property(("Rent Lot", 1, 100, 25))
+    prop.owner = owner
+
+    game.pay_rent(tenant, prop)
+
+    assert tenant.balance == 175
+    assert owner.balance == 325
