@@ -46,3 +46,15 @@ def test_paying_jail_fine_deducts_money_from_player(monkeypatch):
     game._handle_jail_turn(player)
 
     assert player.balance == 100
+
+
+def test_find_winner_returns_richest_player():
+    """Winner should be the player with the highest net worth."""
+    game = Game(["A", "B"])
+    rich = Player("Rich", balance=2000)
+    poor = Player("Poor", balance=100)
+    game.players = [rich, poor]
+
+    winner = game.find_winner()
+
+    assert winner == rich
