@@ -1,6 +1,5 @@
 import time
 
-
 def _address_from_payload(payload):
     if isinstance(payload, dict):
         if "address" in payload and isinstance(payload["address"], dict):
@@ -16,9 +15,19 @@ def _new_address_payload(label="HOME", is_default=False):
         "label": label,
         "street": f"Maple Street {suffix}",
         "city": "Bangalore",
-        "pincode": "560001",
+        "pincode": 560001,
         "is_default": is_default,
     }
+
+
+def _create_address(session, base_url, user_headers, payload):
+    response = session.post(
+        f"{base_url}/api/v1/addresses",
+        headers=user_headers,
+        json=payload,
+    )
+    assert response.status_code in (200, 201), response.text
+    return _address_from_payload(response.json())
 
 
 def test_get_addresses_returns_json_list(session, base_url, user_headers):
@@ -66,7 +75,7 @@ def test_add_address_returns_created_address_object(session, base_url, user_head
         json=payload,
     )
 
-    assert response.status_code in (200, 201)
+    assert response.status_code in (200, 201), response.text
 
     created = _address_from_payload(response.json())
 
@@ -79,21 +88,18 @@ def test_add_address_returns_created_address_object(session, base_url, user_head
 
 
 def test_new_default_address_replaces_old_default(session, base_url, user_headers):
-    first_response = session.post(
-        f"{base_url}/api/v1/addresses",
-        headers=user_headers,
-        json=_new_address_payload(label="HOME", is_default=True),
+    _create_address(
+        session,
+        base_url,
+        user_headers,
+        _new_address_payload(label="HOME", is_default=True),
     )
-    second_response = session.post(
-        f"{base_url}/api/v1/addresses",
-        headers=user_headers,
-        json=_new_address_payload(label="OFFICE", is_default=True),
+    second_address = _create_address(
+        session,
+        base_url,
+        user_headers,
+        _new_address_payload(label="OFFICE", is_default=True),
     )
-
-    assert first_response.status_code in (200, 201)
-    assert second_response.status_code in (200, 201)
-
-    second_address = _address_from_payload(second_response.json())
 
     listing = session.get(
         f"{base_url}/api/v1/addresses",
@@ -109,14 +115,12 @@ def test_new_default_address_replaces_old_default(session, base_url, user_header
 
 
 def test_update_address_returns_new_street_not_old_data(session, base_url, user_headers):
-    create_response = session.post(
-        f"{base_url}/api/v1/addresses",
-        headers=user_headers,
-        json=_new_address_payload(label="HOME"),
+    created = _create_address(
+        session,
+        base_url,
+        user_headers,
+        _new_address_payload(label="HOME"),
     )
-
-    assert create_response.status_code in (200, 201)
-    created = _address_from_payload(create_response.json())
     address_id = created["address_id"]
     new_street = f"Updated Street {address_id}"
 

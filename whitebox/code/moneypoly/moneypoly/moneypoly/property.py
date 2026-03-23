@@ -1,0 +1,143 @@
+"""Property and property-group models for MoneyPoly."""
+
+class Property:
+    """Represents a single purchasable property tile on the MoneyPoly board."""
+
+    FULL_GROUP_MULTIPLIER = 2
+
+    def __init__(self, details, group=None):
+        self.name, self.position, price, base_rent = details
+        self.group = group
+        self._financial = {
+            "price": price,
+            "base_rent": base_rent,
+            "mortgage_value": price // 2,
+        }
+        self._state = {
+            "owner": None,
+            "is_mortgaged": False,
+            "houses": 0,
+        }
+
+        # Register with the group immediately on creation
+        if group is not None and self not in group.properties:
+            group.properties.append(self)
+
+    @property
+    def price(self):
+        """Return the purchase price of the property."""
+        return self._financial["price"]
+
+    @property
+    def base_rent(self):
+        """Return the base rent before group bonuses."""
+        return self._financial["base_rent"]
+
+    @property
+    def mortgage_value(self):
+        """Return the amount paid out when the property is mortgaged."""
+        return self._financial["mortgage_value"]
+
+    @property
+    def owner(self):
+        """Return the current owner, if any."""
+        return self._state["owner"]
+
+    @owner.setter
+    def owner(self, value):
+        self._state["owner"] = value
+
+    @property
+    def is_mortgaged(self):
+        """Return whether the property is currently mortgaged."""
+        return self._state["is_mortgaged"]
+
+    @is_mortgaged.setter
+    def is_mortgaged(self, value):
+        self._state["is_mortgaged"] = value
+
+    @property
+    def houses(self):
+        """Return the number of houses built on the property."""
+        return self._state["houses"]
+
+    @houses.setter
+    def houses(self, value):
+        self._state["houses"] = value
+
+    def get_rent(self):
+        """
+        Return the rent owed for landing on this property.
+        Rent is doubled if the owner holds the entire colour group.
+        Returns 0 if the property is mortgaged.
+        """
+        if self.is_mortgaged:
+            return 0
+        if self.group is not None and self.group.all_owned_by(self.owner):
+            return self.base_rent * self.FULL_GROUP_MULTIPLIER
+        return self.base_rent
+
+    def mortgage(self):
+        """
+        Mortgage this property and return the payout to the owner.
+        Returns 0 if already mortgaged.
+        """
+        if self.is_mortgaged:
+            return 0
+        self.is_mortgaged = True
+        return self.mortgage_value
+
+    def unmortgage(self):
+        """
+        Lift the mortgage on this property.
+        Returns the cost (110 % of mortgage value), or 0 if not mortgaged.
+        """
+        if not self.is_mortgaged:
+            return 0
+        cost = int(self.mortgage_value * 1.1)
+        self.is_mortgaged = False
+        return cost
+
+    def is_available(self):
+        """Return True if this property can be purchased (unowned, not mortgaged)."""
+        return self.owner is None and not self.is_mortgaged
+
+    def __repr__(self):
+        owner_name = self.owner.name if self.owner else "unowned"
+        return f"Property({self.name!r}, pos={self.position}, owner={owner_name!r})"
+
+
+class PropertyGroup:
+    """Represent a set of same-colour properties."""
+
+    def __init__(self, name, color):
+        self.name = name
+        self.color = color
+        self.properties = []
+
+    def add_property(self, prop):
+        """Add a Property to this group and back-link it."""
+        if prop not in self.properties:
+            self.properties.append(prop)
+            prop.group = self
+
+    def all_owned_by(self, player):
+        """Return True if every property in this group is owned by `player`."""
+        if player is None:
+            return False
+        return all(p.owner == player for p in self.properties)
+
+    def get_owner_counts(self):
+        """Return a dict mapping each owner to how many properties they hold in this group."""
+        counts = {}
+        for prop in self.properties:
+            if prop.owner is not None:
+                counts[prop.owner] = counts.get(prop.owner, 0) + 1
+        return counts
+
+    def size(self):
+        """Return the number of properties in this group."""
+        return len(self.properties)
+
+    def __repr__(self):
+        return f"PropertyGroup({self.name!r}, {len(self.properties)} properties)"

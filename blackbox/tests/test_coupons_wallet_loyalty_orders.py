@@ -265,6 +265,8 @@ def test_invoice_total_is_not_less_than_subtotal(session, base_url, user_headers
 
     subtotal = _invoice_value(payload, "subtotal")
     total = _invoice_value(payload, "total")
+    if total is None:
+        total = _invoice_value(payload, "total_amount")
 
     assert subtotal is not None
     assert total is not None
